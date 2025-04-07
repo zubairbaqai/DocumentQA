@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Document QA</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 2rem;
+      max-width: 600px;
+      margin: auto;
+    }
+    input, textarea, select, button {
+      width: 100%;
+      margin-top: 1rem;
+      padding: 0.75rem;
+    }
+    .answer {
+      margin-top: 1.5rem;
+      background: #f0f0f0;
+      padding: 1rem;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>📄 Document Intelligence</h1>
+
+  <form id="upload-form">
+    <label>Upload PDF or PPTX:</label>
+    <input type="file" id="fileInput" accept=".pdf,.pptx" required />
+    <button type="submit">Upload</button>
+  </form>
+
+  <form id="qa-form" style="display: none;">
+    <label>Select Document:</label>
+    <select id="docSelect">
+      <option value="">🔍 Search all documents</option>
+    </select>
+
+    <label>Ask a Question:</label>
+    <textarea id="questionInput" rows="4" placeholder="Type your question..."></textarea>
+    <button type="submit">Get Answer</button>
+  </form>
+
+  <div class="answer" id="answerBox" style="display: none;"></div>
+
+  <script>
+    // Load and display uploaded documents
+    async function fetchDocuments() {
+      try {
+        const res = await fetch("http://localhost:8000/documents");
+        const docs = await res.json();
+        const select = document.getElementById("docSelect");
+
+        // Clear old options
+        select.innerHTML = '<option value="">🔍 Search all documents</option>';
+
+        docs.forEach(doc => {
+          const option = document.createElement("option");
+          option.value = doc.doc_id;
+          option.textContent = doc.filename;
+          select.appendChild(option);
+        });
+
+        if (docs.length > 0) {
+          document.getElementById("qa-form").style.display = "block";
+        }
+      } catch (err) {
+        console.error("Failed to fetch documents:", err);
+      }
+    }
+
+    // Handle document upload
+    document.getElementById("upload-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const file = document.getElementById("fileInput").files[0];
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("http://localhost:8000/upload", {
+        method: "POST",
+        body: formData
+      });
+
+      const result = await response.json();
+      if (response.ok) {
+        alert("Upload successful! You can now ask questions.");
+        await fetchDocuments(); // Refresh doc list
+      } else {
+        alert("Upload failed: " + result.detail);
+      }
+    });
+
+    // Handle question submission
+    document.getElementById("qa-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const question = document.getElementById("questionInput").value;
+      const selectedDocId = document.getElementById("docSelect").value;
+
+      const formData = new FormData();
+      formData.append("question", question);
+      if (selectedDocId) formData.append("doc_id", selectedDocId);
+
+      const response = await fetch("http://localhost:8000/ask", {
+        method: "POST",
+        body: formData
+      });
+
+      const result = await response.json();
+      const answerBox = document.getElementById("answerBox");
+
+      if (response.ok) {
+        answerBox.innerText = result.answer;
+        answerBox.style.display = "block";
+      } else {
+        answerBox.innerText = "Error: " + result.detail;
+        answerBox.style.display = "block";
+      }
+    });
+
+    // On page load, fetch available docs and show QA form if needed
+    window.addEventListener("load", fetchDocuments);
+  </script>
+</body>
+</html>

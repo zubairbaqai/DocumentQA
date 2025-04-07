@@ -1,0 +1,9 @@
+/.venv
+/uploaded_docs
+Dockerfile
+server.js
+docker-compose.yml
+package.json
+/vectorstores
+/uploaded_docs
+.env
