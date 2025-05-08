@@ -1,7 +1,6 @@
 
 # 📄 Document Intelligence API
 
-> **Senior AI Ops Software Engineer – Take-Home Challenge**
 
 A REST API built with Node.js and Express to upload PDF documents, process their contents, and answer questions using advanced AI techniques powered by OpenAI and LangChain.
 
